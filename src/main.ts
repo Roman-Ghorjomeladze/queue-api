@@ -1,3 +1,4 @@
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -8,6 +9,17 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe());
+
+  const config = new DocumentBuilder()
+    .setTitle('Queue API')
+    .setDescription(
+      'An API to publish messages and subscribe them into the queues provided by different providers.',
+    )
+    .setVersion('1.0')
+    .addTag('Queue NestJS NodeJS TypeScript')
+    .build();
+  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, documentFactory);
 
   const configService: ConfigService = app.get(ConfigService);
   const APP_PORT: number = Number(configService.get('APP_PORT')) || 3003;

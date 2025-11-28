@@ -157,6 +157,10 @@ $ yarn run test
 
 ```
 
+## Swagger Documentation
+
+You can view all active routes on following URL http://localhost:3003/api/docs
+
 ## Resources
 
 Check out a few resources that may come in handy when working with NestJS:
