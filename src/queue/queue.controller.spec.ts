@@ -5,6 +5,8 @@ import { QueueService } from './queue.service';
 import { CreateQueueMessageADto } from './dto/create-queue-message.dto';
 import { SubscribeQueueDto } from './dto/subscribe-queue.dto';
 
+/* eslint-disable @typescript-eslint/unbound-method */
+
 describe('QueueController', () => {
   let controller: QueueController;
   let queueService: jest.Mocked<QueueService>;
@@ -40,7 +42,6 @@ describe('QueueController', () => {
 
   describe('publishMessage', () => {
     it('should publish a message successfully', async () => {
-      // Arrange
       const messageDto: CreateQueueMessageADto = {
         queueName: 'test-queue',
         message: { content: 'test message' },
@@ -58,7 +59,6 @@ describe('QueueController', () => {
     });
 
     it('should handle different message types', async () => {
-      // Arrange
       const stringMessage: CreateQueueMessageADto = {
         queueName: 'string-queue',
         message: 'simple string',
@@ -70,7 +70,6 @@ describe('QueueController', () => {
 
       queueService.publish.mockResolvedValue({ message: 'Published' });
 
-      // Act & Assert
       await controller.publishMessage(stringMessage);
       expect(queueService.publish).toHaveBeenCalledWith(stringMessage);
 
@@ -79,7 +78,6 @@ describe('QueueController', () => {
     });
 
     it('should throw HttpException when service throws HttpException', async () => {
-      // Arrange
       const messageDto: CreateQueueMessageADto = {
         queueName: 'error-queue',
         message: 'test',
@@ -87,7 +85,6 @@ describe('QueueController', () => {
       const httpException = new HttpException('Queue not found', 404);
       queueService.publish.mockRejectedValue(httpException);
 
-      // Act & Assert
       await expect(controller.publishMessage(messageDto)).rejects.toThrow(
         HttpException,
       );
@@ -98,7 +95,6 @@ describe('QueueController', () => {
     });
 
     it('should throw InternalServerErrorException when service throws non-HttpException', async () => {
-      // Arrange
       const messageDto: CreateQueueMessageADto = {
         queueName: 'error-queue',
         message: 'test',
@@ -106,7 +102,6 @@ describe('QueueController', () => {
       const genericError = new Error('Unexpected error');
       queueService.publish.mockRejectedValue(genericError);
 
-      // Act & Assert
       await expect(controller.publishMessage(messageDto)).rejects.toThrow(
         InternalServerErrorException,
       );
@@ -117,7 +112,6 @@ describe('QueueController', () => {
     });
 
     it('should handle publish service errors gracefully', async () => {
-      // Arrange
       const messageDto: CreateQueueMessageADto = {
         queueName: 'error-queue',
         message: 'test',
@@ -125,7 +119,6 @@ describe('QueueController', () => {
       const error = new Error('Service error');
       queueService.publish.mockRejectedValue(error);
 
-      // Act & Assert
       try {
         await controller.publishMessage(messageDto);
         fail('Should have thrown an error');
@@ -140,7 +133,6 @@ describe('QueueController', () => {
 
   describe('subscribeToQueue', () => {
     it('should subscribe to a queue successfully', async () => {
-      // Arrange
       const subscribeDto: SubscribeQueueDto = {
         queueName: 'test-queue',
       };
@@ -157,7 +149,6 @@ describe('QueueController', () => {
     });
 
     it('should handle different queue names', async () => {
-      // Arrange
       const queues = [
         { queueName: 'queue-1' },
         { queueName: 'queue-2' },
@@ -178,14 +169,12 @@ describe('QueueController', () => {
     });
 
     it('should throw HttpException when service throws HttpException', async () => {
-      // Arrange
       const subscribeDto: SubscribeQueueDto = {
         queueName: 'error-queue',
       };
       const httpException = new HttpException('Queue not found', 404);
       queueService.subscribe.mockRejectedValue(httpException);
 
-      // Act & Assert
       await expect(controller.subscribeToQueue(subscribeDto)).rejects.toThrow(
         HttpException,
       );
@@ -196,14 +185,12 @@ describe('QueueController', () => {
     });
 
     it('should throw InternalServerErrorException when service throws non-HttpException', async () => {
-      // Arrange
       const subscribeDto: SubscribeQueueDto = {
         queueName: 'error-queue',
       };
       const genericError = new Error('Unexpected error');
       queueService.subscribe.mockRejectedValue(genericError);
 
-      // Act & Assert
       await expect(controller.subscribeToQueue(subscribeDto)).rejects.toThrow(
         InternalServerErrorException,
       );
@@ -214,14 +201,12 @@ describe('QueueController', () => {
     });
 
     it('should handle subscribe service errors gracefully', async () => {
-      // Arrange
       const subscribeDto: SubscribeQueueDto = {
         queueName: 'error-queue',
       };
       const error = new Error('Service error');
       queueService.subscribe.mockRejectedValue(error);
 
-      // Act & Assert
       try {
         await controller.subscribeToQueue(subscribeDto);
         fail('Should have thrown an error');

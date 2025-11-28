@@ -6,6 +6,5 @@ export class CreateQueueMessageADto {
   queueName: string;
 
   @IsNotEmpty()
-  @IsString()
   message: unknown;
 }

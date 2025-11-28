@@ -1,10 +1,13 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { connect, Channel, ChannelModel } from 'amqplib';
+import { ConfigService } from '@nestjs/config';
+
+import { AppLogger } from 'src/common/logger/logger.service';
 import {
   PublishResponse,
   QueueClient,
   SubscribeResponse,
 } from '../queue.interface';
-import { connect, Channel, ChannelModel } from 'amqplib';
 
 /**
  * RabbitMQ queue implementation for production use.
@@ -13,7 +16,6 @@ import { connect, Channel, ChannelModel } from 'amqplib';
  * @remarks
  * Requires a running RabbitMQ server.
  * Uses environment variables:
- * - RABBITMQ_URL (optional, full connection string)
  * - RABBITMQ_HOST (defaults to 'localhost', use 'rabbitmq' for Docker)
  * - RABBITMQ_PORT (defaults to '5672')
  * - RABBITMQ_USERNAME (defaults to 'admin')
@@ -27,13 +29,15 @@ import { connect, Channel, ChannelModel } from 'amqplib';
  */
 @Injectable()
 export class RabbitMqQueueService implements QueueClient, OnModuleDestroy {
-  private readonly logger = new Logger(RabbitMqQueueService.name);
   private connection?: ChannelModel;
   private channel?: Channel;
 
+  constructor(
+    private logger: AppLogger,
+    private configService: ConfigService,
+  ) {}
   /**
    * Ensures a RabbitMQ channel is available, creating and caching it if necessary.
-   * Uses the RABBITMQ_URL environment variable or defaults to 'amqp://rabbitmq:5672'.
    *
    * @private
    * @returns {Promise<Channel>} A promise that resolves with the RabbitMQ channel.
@@ -50,14 +54,12 @@ export class RabbitMqQueueService implements QueueClient, OnModuleDestroy {
     }
 
     // Build RabbitMQ URL with credentials support
-    let url = process.env.RABBITMQ_URL;
-    if (!url) {
-      const username = process.env.RABBITMQ_USERNAME || 'admin';
-      const password = process.env.RABBITMQ_PASSWORD || 'admin';
-      const host = process.env.RABBITMQ_HOST || 'localhost';
-      const port = process.env.RABBITMQ_PORT || '5672';
-      url = `amqp://${username}:${password}@${host}:${port}`;
-    }
+
+    const username = this.configService.getOrThrow<string>('RABBITMQ_USERNAME');
+    const password = this.configService.getOrThrow<string>('RABBITMQ_PASSWORD');
+    const host = this.configService.getOrThrow<string>('RABBITMQ_HOST');
+    const port = this.configService.getOrThrow<string>('RABBITMQ_PORT');
+    const url = `amqp://${username}:${password}@${host}:${port}`;
     this.logger.log(
       `Connecting to RabbitMQ at ${url.replace(/:[^:@]+@/, ':****@')}`,
     );

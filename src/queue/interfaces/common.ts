@@ -3,3 +3,16 @@ export enum AllowedQueueProviders {
   RABBITMQ = 'rabbitmq',
   LOCAL = 'local',
 }
+
+export interface PollingTimeoutError {
+  name?: string;
+  message?: string;
+  code?: string;
+}
+
+export interface QueueNotExistsError {
+  name?: string;
+  Code?: string;
+  message?: string;
+  $metadata?: { httpStatusCode?: number };
+}

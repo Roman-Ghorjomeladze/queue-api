@@ -1,14 +1,14 @@
-// src/queue/queue.module.ts
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import { QueueClient } from './queue.interface';
-import { QueueService } from './queue.service';
-import { QueueController } from './queue.controller';
-
+import { RabbitMqQueueService } from './implementations/rabbitmq.queue.service';
 import { MemoryQueueService } from './implementations/memory.queue.service';
 import { SqsQueueService } from './implementations/sqs.queue.service';
-import { RabbitMqQueueService } from './implementations/rabbitmq.queue.service';
+import { validateAndGetQueueProvider } from './utils/common';
+import { AllowedQueueProviders } from './interfaces/common';
+import { QueueController } from './queue.controller';
+import { QueueClient } from './queue.interface';
+import { QueueService } from './queue.service';
 import { QUEUE_CLIENT } from './queue.token';
 
 @Module({})
@@ -24,18 +24,6 @@ export class QueueModule {
    * to select the appropriate implementation based on the QUEUE_PROVIDER environment variable.
    * Supported values: 'memory' (default), 'sqs', 'rabbitmq'.
    * The module is configured as global, making it available throughout the application.
-   *
-   * @example
-   * ```typescript
-   * // In app.module.ts
-   * @Module({
-   *   imports: [
-   *     ConfigModule.forRoot({ isGlobal: true }),
-   *     QueueModule.forRoot(),
-   *   ],
-   * })
-   * export class AppModule {}
-   * ```
    */
   static forRoot(): DynamicModule {
     return {
@@ -44,12 +32,11 @@ export class QueueModule {
       imports: [ConfigModule],
       controllers: [QueueController],
       providers: [
-        // Register all three implementations first — Nest will handle their own deps
         MemoryQueueService,
         SqsQueueService,
         RabbitMqQueueService,
 
-        // This factory returns the correct instance based on config
+        // This factory returns the correct queue instance based on env config
         {
           provide: QUEUE_CLIENT,
           useFactory: (
@@ -58,16 +45,16 @@ export class QueueModule {
             sqs: SqsQueueService,
             rabbit: RabbitMqQueueService,
           ): QueueClient => {
-            const provider = (
-              config.get<string>('QUEUE_PROVIDER') ?? 'memory'
-            ).toLowerCase();
+            const provider: AllowedQueueProviders = validateAndGetQueueProvider(
+              config.get<string>('QUEUE_PROVIDER')?.toLowerCase(),
+            );
 
             console.log(
               `[QueueModule] Using queue provider: ${provider.toUpperCase()}`,
             );
 
-            if (provider === 'sqs') return sqs;
-            if (provider === 'rabbitmq') return rabbit;
+            if (provider === AllowedQueueProviders.AWS_SQS) return sqs;
+            if (provider === AllowedQueueProviders.RABBITMQ) return rabbit;
             return memory; // default
           },
           inject: [
@@ -78,7 +65,6 @@ export class QueueModule {
           ],
         },
 
-        // Your service that uses the queue
         QueueService,
       ],
       exports: [QUEUE_CLIENT, QueueService],

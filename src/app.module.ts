@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { QueueModule } from './queue/queue.module';
-import { ConfigModule } from '@nestjs/config';
+
 import { LoggerModule } from './common/logger/logger.module';
+import { QueueModule } from './queue/queue.module';
+import { AppController } from './app.controller';
+import { ConfigModule } from '@nestjs/config';
+import { AppService } from './app.service';
 
 @Module({
   imports: [

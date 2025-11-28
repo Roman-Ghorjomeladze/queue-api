@@ -1,4 +1,5 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+
 import {
   PublishResponse,
   QueueClient,
@@ -32,7 +33,6 @@ export class MemoryQueueService implements QueueClient {
    * @param {string} queueName - The name of the queue to publish to.
    * @param {T} message - The message payload to publish.
    * @returns {Promise<PublishResponse>} A promise that resolves with a success message.
-   * @throws {NotFoundException} Throws if no handlers are subscribed to the queue.
    *
    * @example
    * ```typescript
@@ -45,7 +45,6 @@ export class MemoryQueueService implements QueueClient {
       `Publish to [${queueName}] (memory): ${JSON.stringify(message)}`,
     );
     const handlers = this.subscribers.get(queueName) || [];
-    if (handlers.length === 0) throw new NotFoundException('Queue not found');
     for (const handler of handlers) {
       handler(message).catch((err) =>
         this.logger.error(`Handler error for queue ${queueName}`, err),

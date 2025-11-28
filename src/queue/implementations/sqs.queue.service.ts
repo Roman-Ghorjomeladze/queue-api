@@ -1,4 +1,5 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   SQSClient,
   SendMessageCommand,
@@ -7,22 +8,27 @@ import {
   GetQueueUrlCommand,
   CreateQueueCommand,
 } from '@aws-sdk/client-sqs';
+import { Agent } from 'http';
+
+import { isQueueMissing, isTimoutError } from '../utils/errors';
+import { AppLogger } from 'src/common/logger/logger.service';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
 import {
   PublishResponse,
   QueueClient,
   SubscribeResponse,
 } from '../queue.interface';
-import { NodeHttpHandler } from '@smithy/node-http-handler';
-import { Agent } from 'http';
 
-const createSqsClient = (): SQSClient => {
-  const endpoint = process.env.AWS_ENDPOINT_URL || 'http://localhost:4566';
+const createSqsClient = (configService: ConfigService): SQSClient => {
+  const endpoint = configService.getOrThrow<string>('AWS_ENDPOINT_URL');
 
   return new SQSClient({
-    region: process.env.AWS_REGION ?? 'us-east-1',
+    region: configService.getOrThrow<string>('AWS_REGION'),
     credentials: {
-      accessKeyId: 'test',
-      secretAccessKey: 'test',
+      accessKeyId: configService.getOrThrow<string>('AWS_ACCESS_KEY_ID'),
+      secretAccessKey: configService.getOrThrow<string>(
+        'AWS_SECRET_ACCESS_KEY',
+      ),
     },
     // THIS IS THE MAGIC — forces HTTP and fixes ::1/127.0.0.1 bug
     requestHandler: new NodeHttpHandler({
@@ -57,10 +63,15 @@ const createSqsClient = (): SQSClient => {
  */
 @Injectable()
 export class SqsQueueService implements QueueClient, OnModuleDestroy {
-  private readonly logger = new Logger(SqsQueueService.name);
-  private readonly client: SQSClient = createSqsClient(); // ← perfect inference
+  private readonly client: SQSClient;
   private readonly queueUrls = new Map<string, string>();
 
+  constructor(
+    private configService: ConfigService,
+    private logger: AppLogger,
+  ) {
+    createSqsClient(this.configService);
+  }
   /**
    * Retrieves the URL for an SQS queue, creating it if it doesn't exist.
    * Caches the result for subsequent calls.
@@ -90,19 +101,13 @@ export class SqsQueueService implements QueueClient, OnModuleDestroy {
       if (!QueueUrl) throw new Error('QueueUrl is missing in response');
 
       this.queueUrls.set(queueName, QueueUrl);
-      this.logger.debug(`Using existing SQS queue: ${queueName} → ${QueueUrl}`);
+      this.logger.warn(`Using existing SQS queue: ${queueName} → ${QueueUrl}`);
       return QueueUrl;
     } catch (error: any) {
       // Correctly detect "queue does not exist"
-      const isQueueMissing =
-        (error as { name: string })?.name === 'QueueDoesNotExist' ||
-        (error as { Code: string })?.Code ===
-          'AWS.SimpleQueueService.NonExistentQueue' ||
-        (error as { message: string })?.message?.includes('does not exist') ||
-        (error as { $metadata: { httpStatusCode: number } })?.$metadata
-          ?.httpStatusCode === 400;
+      const queueNotFound: boolean = isQueueMissing(error);
 
-      if (!isQueueMissing) {
+      if (!queueNotFound) {
         this.logger.error(
           `Unexpected error getting queue URL for "${queueName}"`,
           error,
@@ -150,73 +155,6 @@ export class SqsQueueService implements QueueClient, OnModuleDestroy {
       }
     }
   }
-  //   private async getQueueUrl(queueName: string): Promise<string> {
-  //     const cached = this.queueUrls.get(queueName);
-  //     if (cached) return cached;
-
-  //     try {
-  //       const { QueueUrl } = await this.client.send(
-  //         new GetQueueUrlCommand({ QueueName: queueName }),
-  //       );
-
-  //       if (QueueUrl) {
-  //         this.queueUrls.set(queueName, QueueUrl);
-  //         return QueueUrl;
-  //       }
-  //     } catch (error: any) {
-  //       if (
-  //         (error as { name: string })?.name ===
-  //           'AWS.SimpleQueueService.NonExistentQueue' ||
-  //         (error as { Code: string })?.Code ===
-  //           'AWS.SimpleQueueService.NonExistentQueue'
-  //       ) {
-  //         this.logger.log(`Queue "${queueName}" does not exist, creating it...`);
-  //       } else {
-  //         // Other errors, try creating anyway
-  //         this.logger.log(
-  //           `Error getting queue URL, attempting to create queue "${queueName}"...`,
-  //         );
-  //       }
-  //     }
-
-  //     // Create the queue
-  //     try {
-  //       const { QueueUrl } = await this.client.send(
-  //         new CreateQueueCommand({
-  //           QueueName: queueName,
-  //           Attributes: {
-  //             VisibilityTimeout: '60',
-  //             MessageRetentionPeriod: '345600', // 4 days
-  //           },
-  //         }),
-  //       );
-
-  //       if (!QueueUrl) {
-  //         throw new Error(`Failed to create SQS queue "${queueName}"`);
-  //       }
-
-  //       this.logger.log(`Created SQS queue "${queueName}" with URL: ${QueueUrl}`);
-  //       this.queueUrls.set(queueName, QueueUrl);
-  //       return QueueUrl;
-  //     } catch (error: any) {
-  //       // If creation fails, it might already exist, try getting URL again
-  //       if (
-  //         (error as { name: string })?.name === 'QueueAlreadyExists' ||
-  //         (error as { Code: string }).Code === 'QueueAlreadyExists'
-  //       ) {
-  //         const { QueueUrl } = await this.client.send(
-  //           new GetQueueUrlCommand({ QueueName: queueName }),
-  //         );
-  //         if (QueueUrl) {
-  //           this.queueUrls.set(queueName, QueueUrl);
-  //           return QueueUrl;
-  //         }
-  //       }
-  //       throw new Error(
-  //         `Failed to create or retrieve SQS queue "${queueName}": ${(error as { message: string })?.message}`,
-  //       );
-  //     }
-  //   }
 
   /**
    * Publishes a message to an AWS SQS queue.
@@ -315,7 +253,16 @@ export class SqsQueueService implements QueueClient, OnModuleDestroy {
             })();
           }
         } catch (err: any) {
-          this.logger.error(`Polling error on queue ${queueName}`, err);
+          if (isTimoutError(err)) {
+            this.logger.warn(`Long polling timeout (normal) — retrying...`);
+            continue; // start next poll
+          }
+
+          this.logger.error(
+            `Polling error on queue ${queueName}`,
+            err instanceof Error ? err.stack : err,
+          );
+
           await new Promise((r) => setTimeout(r, 5000));
         }
       }

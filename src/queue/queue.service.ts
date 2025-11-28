@@ -1,9 +1,9 @@
-// src/queue/queue.service.ts
 import { Inject, Injectable } from '@nestjs/common';
-import { QUEUE_CLIENT } from './queue.token';
-import * as queueInterface from './queue.interface';
-import { SubscribeQueueDto } from './dto/subscribe-queue.dto';
+
 import { CreateQueueMessageADto } from './dto/create-queue-message.dto';
+import { SubscribeQueueDto } from './dto/subscribe-queue.dto';
+import * as queueInterface from './queue.interface';
+import { QUEUE_CLIENT } from './queue.token';
 
 /**
  * Service for publishing and subscribing to queues.
@@ -37,13 +37,6 @@ export class QueueService {
    * @returns {Promise<PublishResponse>} A promise that resolves with the publish response containing a success message.
    * @throws {Error} Throws an error if the queue client fails to publish the message.
    *
-   * @example
-   * ```typescript
-   * await queueService.publish({
-   *   queueName: 'my-queue',
-   *   message: { id: 1, content: 'Hello World' }
-   * });
-   * ```
    */
   async publish(message: CreateQueueMessageADto) {
     return await this.queue.publish(message.queueName, message.message);
@@ -56,12 +49,6 @@ export class QueueService {
    * @returns {Promise<SubscribeResponse>} A promise that resolves with the subscription response containing a success message.
    * @throws {Error} Throws an error if the queue client fails to subscribe to the queue.
    *
-   * @example
-   * ```typescript
-   * await queueService.subscribe({
-   *   queueName: 'my-queue'
-   * });
-   * ```
    */
   async subscribe(payload: SubscribeQueueDto) {
     return await this.queue.subscribe(payload.queueName, async (message) => {

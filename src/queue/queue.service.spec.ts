@@ -41,7 +41,6 @@ describe('QueueService', () => {
 
   describe('publish', () => {
     it('should publish a message to the queue', async () => {
-      // Arrange
       const messageDto: CreateQueueMessageADto = {
         queueName: 'test-queue',
         message: { content: 'test message' },
@@ -49,10 +48,8 @@ describe('QueueService', () => {
       const expectedResponse = { message: 'Message published successfully' };
       mockQueueClient.publish.mockResolvedValue(expectedResponse);
 
-      // Act
       const result = await service.publish(messageDto);
 
-      // Assert
       expect(mockQueueClient.publish).toHaveBeenCalledWith(
         messageDto.queueName,
         messageDto.message,
@@ -62,7 +59,6 @@ describe('QueueService', () => {
     });
 
     it('should handle different message types', async () => {
-      // Arrange
       const stringMessage: CreateQueueMessageADto = {
         queueName: 'string-queue',
         message: 'simple string message',
@@ -80,7 +76,6 @@ describe('QueueService', () => {
         message: 'Message published',
       });
 
-      // Act & Assert
       await service.publish(stringMessage);
       expect(mockQueueClient.publish).toHaveBeenCalledWith(
         'string-queue',
@@ -103,7 +98,6 @@ describe('QueueService', () => {
     });
 
     it('should propagate errors from queue client', async () => {
-      // Arrange
       const messageDto: CreateQueueMessageADto = {
         queueName: 'error-queue',
         message: 'test',
@@ -111,7 +105,6 @@ describe('QueueService', () => {
       const error = new Error('Queue publish failed');
       mockQueueClient.publish.mockRejectedValue(error);
 
-      // Act & Assert
       await expect(service.publish(messageDto)).rejects.toThrow(error);
       expect(mockQueueClient.publish).toHaveBeenCalledTimes(1);
     });
@@ -119,7 +112,6 @@ describe('QueueService', () => {
 
   describe('subscribe', () => {
     it('should subscribe to a queue', async () => {
-      // Arrange
       const subscribeDto: SubscribeQueueDto = {
         queueName: 'test-queue',
       };
@@ -128,10 +120,8 @@ describe('QueueService', () => {
       };
       mockQueueClient.subscribe.mockResolvedValue(expectedResponse);
 
-      // Act
       const result = await service.subscribe(subscribeDto);
 
-      // Assert
       expect(mockQueueClient.subscribe).toHaveBeenCalledWith(
         subscribeDto.queueName,
         expect.any(Function),
@@ -141,7 +131,6 @@ describe('QueueService', () => {
     });
 
     it('should register a message handler when subscribing', async () => {
-      // Arrange
       const subscribeDto: SubscribeQueueDto = {
         queueName: 'handler-queue',
       };
@@ -149,10 +138,8 @@ describe('QueueService', () => {
         message: 'Subscribed',
       });
 
-      // Act
       await service.subscribe(subscribeDto);
 
-      // Assert
       expect(mockQueueClient.subscribe).toHaveBeenCalledWith(
         'handler-queue',
         expect.any(Function),
@@ -174,7 +161,6 @@ describe('QueueService', () => {
     });
 
     it('should handle handler errors gracefully', async () => {
-      // Arrange
       const subscribeDto: SubscribeQueueDto = {
         queueName: 'error-handler-queue',
       };
@@ -182,10 +168,8 @@ describe('QueueService', () => {
         message: 'Subscribed',
       });
 
-      // Act
       await service.subscribe(subscribeDto);
 
-      // Assert - handler should catch errors
       const handlerFn = mockQueueClient.subscribe.mock.calls[0][1];
       const testMessage = { id: 1, content: 'test' };
 
@@ -194,31 +178,26 @@ describe('QueueService', () => {
     });
 
     it('should propagate errors from queue client subscription', async () => {
-      // Arrange
       const subscribeDto: SubscribeQueueDto = {
         queueName: 'error-queue',
       };
       const error = new Error('Subscription failed');
       mockQueueClient.subscribe.mockRejectedValue(error);
 
-      // Act & Assert
       await expect(service.subscribe(subscribeDto)).rejects.toThrow(error);
       expect(mockQueueClient.subscribe).toHaveBeenCalledTimes(1);
     });
 
     it('should handle different queue names', async () => {
-      // Arrange
       const queues = ['queue-1', 'queue-2', 'queue-3'];
       mockQueueClient.subscribe.mockResolvedValue({
         message: 'Subscribed',
       });
 
-      // Act
       for (const queueName of queues) {
         await service.subscribe({ queueName });
       }
 
-      // Assert
       expect(mockQueueClient.subscribe).toHaveBeenCalledTimes(queues.length);
       queues.forEach((queueName) => {
         expect(mockQueueClient.subscribe).toHaveBeenCalledWith(

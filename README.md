@@ -47,13 +47,7 @@ This project includes Docker Compose configuration for local development with Ra
 
 ```bash
 # Start RabbitMQ and LocalStack
-docker-compose up -d
-
-# Check service status
-docker-compose ps
-
-# View logs
-docker-compose logs -f
+docker compose up -d
 
 # Stop services
 docker-compose down
@@ -79,20 +73,20 @@ cp .env.example .env
 **Key Configuration:**
 
 1. **Queue Provider Selection:**
+
    ```env
    QUEUE_PROVIDER=memory  # Options: 'memory', 'sqs', 'rabbitmq'
    ```
 
 2. **RabbitMQ Configuration:**
+
    ```env
    # For Docker (service name)
    RABBITMQ_HOST=rabbitmq
    RABBITMQ_PORT=5672
    RABBITMQ_USERNAME=admin
    RABBITMQ_PASSWORD=admin
-   
-   # Or use full URL
-   # RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
+
    ```
 
 3. **SQS Configuration (LocalStack):**
@@ -106,11 +100,13 @@ cp .env.example .env
 ### Using Different Queue Providers
 
 **Memory Queue (default - no Docker required):**
+
 ```env
 QUEUE_PROVIDER=memory
 ```
 
 **RabbitMQ (requires Docker):**
+
 ```env
 QUEUE_PROVIDER=rabbitmq
 RABBITMQ_HOST=rabbitmq
@@ -120,6 +116,7 @@ RABBITMQ_PASSWORD=admin
 ```
 
 **SQS via LocalStack (requires Docker):**
+
 ```env
 QUEUE_PROVIDER=sqs
 AWS_REGION=us-east-1
@@ -129,6 +126,7 @@ AWS_SECRET_ACCESS_KEY=test
 ```
 
 **SQS via Real AWS (production):**
+
 ```env
 QUEUE_PROVIDER=sqs
 AWS_REGION=us-east-1
@@ -137,55 +135,18 @@ AWS_SECRET_ACCESS_KEY=your-secret-key
 # Leave AWS_ENDPOINT_URL unset or empty
 ```
 
-### Creating SQS Queues in LocalStack
-
-After starting LocalStack, create queues using AWS CLI:
-
-```bash
-# Create a queue
-aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name my-queue
-
-# List queues
-aws --endpoint-url=http://localhost:4566 sqs list-queues
-```
-
-Or using curl:
-```bash
-# Create queue
-curl -X POST http://localhost:4566/000000000000/my-queue
-
-# List queues
-curl http://localhost:4566/000000000000/
-```
-
-### Creating SQS Queues in LocalStack
-
-After starting LocalStack, create queues using AWS CLI:
-
-```bash
-# Create a queue
-aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name my-queue
-
-# List queues
-aws --endpoint-url=http://localhost:4566 sqs list-queues
-```
-
-Or using curl:
-```bash
-curl -X POST http://localhost:4566/000000000000/my-queue
-```
-
 ## Compile and run the project
 
 ```bash
-# development
-$ yarn run start
 
 # watch mode
 $ yarn run start:dev
 
 # production mode
 $ yarn run start:prod
+
+# development
+$ yarn run start
 ```
 
 ## Run tests
@@ -194,25 +155,7 @@ $ yarn run start:prod
 # unit tests
 $ yarn run test
 
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
 ```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ yarn install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
 ## Resources
 
@@ -226,16 +169,6 @@ Check out a few resources that may come in handy when working with NestJS:
 - Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
 - To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
 - Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
 
 ## License
 

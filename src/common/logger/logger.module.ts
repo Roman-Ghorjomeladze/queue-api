@@ -1,7 +1,8 @@
 import { Module, Global, Scope } from '@nestjs/common';
-import { AppLogger } from './logger.service';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+
 import { LoggerInterceptor } from './logger.interceptor';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { AppLogger } from './logger.service';
 
 @Global()
 @Module({
