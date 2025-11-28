@@ -23,12 +23,156 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Queue API built with NestJS that supports multiple queue providers: Memory (for development), RabbitMQ, and AWS SQS (via LocalStack for local development).
+
+## Features
+
+- ✅ Multiple queue provider support (Memory, RabbitMQ, AWS SQS)
+- ✅ Docker setup with RabbitMQ and LocalStack (SQS)
+- ✅ Switch between providers via environment variables
+- ✅ Comprehensive unit tests
+- ✅ Full JSDoc documentation
 
 ## Project setup
 
 ```bash
 $ yarn install
+```
+
+## Docker Setup
+
+This project includes Docker Compose configuration for local development with RabbitMQ and LocalStack (for SQS).
+
+### Starting Docker Services
+
+```bash
+# Start RabbitMQ and LocalStack
+docker-compose up -d
+
+# Check service status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+### Services
+
+- **RabbitMQ**: Available at `localhost:5672` (Management UI: http://localhost:15672)
+  - Default credentials: `admin` / `admin`
+- **LocalStack (SQS)**: Available at `http://localhost:4566`
+  - Default credentials: `test` / `test`
+
+## Configuration
+
+### Environment Variables
+
+Copy `.env.example` to `.env` and configure:
+
+```bash
+cp .env.example .env
+```
+
+**Key Configuration:**
+
+1. **Queue Provider Selection:**
+   ```env
+   QUEUE_PROVIDER=memory  # Options: 'memory', 'sqs', 'rabbitmq'
+   ```
+
+2. **RabbitMQ Configuration:**
+   ```env
+   # For Docker (service name)
+   RABBITMQ_HOST=rabbitmq
+   RABBITMQ_PORT=5672
+   RABBITMQ_USERNAME=admin
+   RABBITMQ_PASSWORD=admin
+   
+   # Or use full URL
+   # RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
+   ```
+
+3. **SQS Configuration (LocalStack):**
+   ```env
+   AWS_REGION=us-east-1
+   AWS_ENDPOINT_URL=http://localhost:4566
+   AWS_ACCESS_KEY_ID=test
+   AWS_SECRET_ACCESS_KEY=test
+   ```
+
+### Using Different Queue Providers
+
+**Memory Queue (default - no Docker required):**
+```env
+QUEUE_PROVIDER=memory
+```
+
+**RabbitMQ (requires Docker):**
+```env
+QUEUE_PROVIDER=rabbitmq
+RABBITMQ_HOST=rabbitmq
+RABBITMQ_PORT=5672
+RABBITMQ_USERNAME=admin
+RABBITMQ_PASSWORD=admin
+```
+
+**SQS via LocalStack (requires Docker):**
+```env
+QUEUE_PROVIDER=sqs
+AWS_REGION=us-east-1
+AWS_ENDPOINT_URL=http://localhost:4566
+AWS_ACCESS_KEY_ID=test
+AWS_SECRET_ACCESS_KEY=test
+```
+
+**SQS via Real AWS (production):**
+```env
+QUEUE_PROVIDER=sqs
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+# Leave AWS_ENDPOINT_URL unset or empty
+```
+
+### Creating SQS Queues in LocalStack
+
+After starting LocalStack, create queues using AWS CLI:
+
+```bash
+# Create a queue
+aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name my-queue
+
+# List queues
+aws --endpoint-url=http://localhost:4566 sqs list-queues
+```
+
+Or using curl:
+```bash
+# Create queue
+curl -X POST http://localhost:4566/000000000000/my-queue
+
+# List queues
+curl http://localhost:4566/000000000000/
+```
+
+### Creating SQS Queues in LocalStack
+
+After starting LocalStack, create queues using AWS CLI:
+
+```bash
+# Create a queue
+aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name my-queue
+
+# List queues
+aws --endpoint-url=http://localhost:4566 sqs list-queues
+```
+
+Or using curl:
+```bash
+curl -X POST http://localhost:4566/000000000000/my-queue
 ```
 
 ## Compile and run the project

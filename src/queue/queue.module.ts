@@ -13,6 +13,30 @@ import { QUEUE_CLIENT } from './queue.token';
 
 @Module({})
 export class QueueModule {
+  /**
+   * Configures the QueueModule with all queue implementations and sets up dependency injection.
+   * The queue provider is determined by the QUEUE_PROVIDER environment variable.
+   *
+   * @returns {DynamicModule} A configured dynamic module that exports QueueService and QUEUE_CLIENT token.
+   *
+   * @remarks
+   * This method registers all three queue implementations (Memory, SQS, RabbitMQ) and uses a factory
+   * to select the appropriate implementation based on the QUEUE_PROVIDER environment variable.
+   * Supported values: 'memory' (default), 'sqs', 'rabbitmq'.
+   * The module is configured as global, making it available throughout the application.
+   *
+   * @example
+   * ```typescript
+   * // In app.module.ts
+   * @Module({
+   *   imports: [
+   *     ConfigModule.forRoot({ isGlobal: true }),
+   *     QueueModule.forRoot(),
+   *   ],
+   * })
+   * export class AppModule {}
+   * ```
+   */
   static forRoot(): DynamicModule {
     return {
       module: QueueModule,
